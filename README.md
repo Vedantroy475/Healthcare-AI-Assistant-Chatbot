@@ -100,7 +100,7 @@ healthcare-chatbot/
     5. Provide explanations in accessible, non-technical terms suitable for a layperson, but include accurate medical terminology where helpful.
     6. Do not provide dosage recommendations or diagnose specific conditions—always refer such queries to a healthcare professional.
   """
-````
+
 
 * This prompt is prepended to every AI call to ensure the model behaves as a knowledgeable, responsible medical assistant.
 
