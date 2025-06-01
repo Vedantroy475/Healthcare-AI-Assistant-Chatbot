@@ -52,8 +52,7 @@ Your primary goals:
 def ask_deepseek(
     prompt: str,
     model: str = "deepseek/deepseek-r1-0528-qwen3-8b:free",
-    temperature: float = 0.7,
-    max_tokens: int = 900,
+    temperature: float = 0.7
 ) -> str:
     """
     Send a user question (with SYSTEM_PROMPT) to Deepseek R1 0528 Qwen3 8B (free) via OpenRouter’s Chat API.
@@ -66,8 +65,7 @@ def ask_deepseek(
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user",   "content": prompt}
             ],
-            temperature=temperature,
-            max_tokens=max_tokens
+            temperature=temperature
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
