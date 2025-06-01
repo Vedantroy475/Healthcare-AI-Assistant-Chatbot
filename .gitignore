@@ -1,0 +1,11 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.egg-info/
+*$py.class
+
+# Virtual environments
+myenv/
+venv/
+# Ignore real environment files
+.env   # your real env file with secrets
