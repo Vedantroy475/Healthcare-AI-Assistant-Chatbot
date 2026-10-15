@@ -1,6 +1,6 @@
 # 🚑 AI-Powered Healthcare Assistant Chatbot
 
-This repository contains a **personal project** demonstrating how to build a simple, yet powerful, AI-powered healthcare assistant using Python, Streamlit, and an OpenRouter-hosted large language model (Deepseek R1 0528 Qwen3 8B). The chatbot can answer basic medical questions, explain common health terms, and provide general advice—all for educational purposes.
+This repository contains a **personal project** demonstrating how to build a simple, yet powerful, AI-powered healthcare assistant using Python, Streamlit, and OpenRouter-hosted large language models. The chatbot can answer basic medical questions, explain common health terms, and provide general advice—all for educational purposes.
 
 ---
 
@@ -19,13 +19,13 @@ This chatbot aims to assist users with:
   - Combines rule-based logic for simple keyword detection with AI-generated responses for deeper explanations  
 
 - **Why I built it:**  
-  - To learn how to integrate an LLM (Deepseek R1 Qwen3 8B) via OpenRouter’s API into a Streamlit app  
+  - To learn how to integrate an LLM via OpenRouter’s API into a Streamlit app  
   - To explore basic natural language processing techniques (keyword matching, regex) for handling health-related queries  
   - To create a standalone, locally runnable chatbot that showcases how AI can assist with educational healthcare content  
 
 - **Key Technologies:**  
   - **Streamlit**: For a clean, interactive web UI  
-  - **OpenAI Python SDK (pointing to OpenRouter)**: To call the Deepseek R1 Qwen3 8B model (“free” tier)  
+  - **OpenAI Python SDK (pointing to OpenRouter)**: To call any OpenRouter-hosted model (“free” tier)  
   - **Python 3.x** + standard libraries (`os`, `re`, `dotenv`) for configuration and logic  
 
 ---
@@ -66,20 +66,20 @@ healthcare-chatbot/
 - **Environment Variables**  
   - The app expects a file named `.env` (in the project root) containing:
     ```
-    Deepseek_API_KEY=or_sk_XXXXXXXXXXXXXXXXXXXXXX
+    AI_API_KEY=or_sk_XXXXXXXXXXXXXXXXXXXXXX
     ```
-  - We use `python-dotenv` (`load_dotenv()`) to load that key into `os.getenv("Deepseek_API_KEY")`.  
+  - We use `python-dotenv` (`load_dotenv()`) to load that key into `os.getenv("AI_API_KEY")`.  
   - On Streamlit Community Cloud (if you choose to deploy), you would add the same key under **Settings → Secrets** instead of using a local `.env`.
 
 - **OpenRouter / LLM Client**  
   - We instantiate an `OpenAI` client (from the official OpenAI Python library) but point it to OpenRouter’s API:
     ```python
     client = OpenAI(
-        api_key=Deepseek_API_KEY,
+        api_key=AI_API_KEY,
         base_url="https://openrouter.ai/api/v1"
     )
     ```
-  - This allows us to call any OpenRouter-hosted model (in this case, `deepseek/deepseek-r1-0528-qwen3-8b:free`).
+  - This allows us to call any OpenRouter-hosted model (in this case, `openrouter/free`).
 
 ### 2. System Prompt & Helper Function
 
@@ -104,10 +104,10 @@ healthcare-chatbot/
 
 * This prompt is prepended to every AI call to ensure the model behaves as a knowledgeable, responsible medical assistant.
 
-* **ask\_deepseek(prompt, …)**
+* **ask_ai(prompt, …)**
 
   ```python
-  def ask_deepseek(prompt: str, model="deepseek/deepseek-r1-0528-qwen3-8b:free", ...):
+  def ask_ai(prompt: str, model="openrouter/free", ...):
       response = client.chat.completions.create(
           model=model,
           messages=[
@@ -135,12 +135,10 @@ def healthcare_chatbot(user_input: str) -> str:
 
     # 1) Definition / Explanation Requests
     if re.match(r"^\s*(what is|explain|define)\b", lower):
-        return ask_deepseek(prompt)
-
-    # 2) Personal Symptoms (First-Person)
+        return ask_ai(prompt)
     if re.search(r"\b(i have|i am|i’m|i feel)\b", lower) and re.search(r"\b(symptom|pain|ache|fever|cough|cold|headache|nausea)\b", lower):
         symptom = re.search(r"\b(symptom|pain|ache|fever|cough|cold|headache|nausea)\b", lower).group(1)
-        general_info = ask_deepseek(f"What are possible causes and general information about {symptom}?")
+        general_info = ask_ai(f"What are possible causes and general information about {symptom}?")
         return (
             f"{general_info}\n\n"
             "⚠️ Disclaimer: This information is educational only and not a substitute for professional medical advice. "
@@ -153,14 +151,14 @@ def healthcare_chatbot(user_input: str) -> str:
     if re.search(r"\b(medication|prescription|drugs|pills)\b", lower):
         return "💊 For medication or prescription concerns, please consult your doctor or pharmacist."
 
-    # 4) Fallback: Forward to Deepseek
-    return ask_deepseek(prompt)
+    # 4) Fallback: Forward to the AI model
+    return ask_ai(prompt)
 ```
 
 1. **Definition/explanation**:
 
    * Detects queries starting with “what is”, “explain”, or “define”.
-   * Forwards those directly to `ask_deepseek(…)`.
+   * Forwards those directly to `ask_ai(…)`.
 
 2. **Personal symptom descriptions**:
 
@@ -196,7 +194,7 @@ def main():
         if not user_input.strip():
             st.warning("⚠️ Please enter a message before submitting.")
         else:
-            with st.spinner("Deepseek is thinking..."):
+            with st.spinner("AI is thinking..."):
                 answer = healthcare_chatbot(user_input)
             st.markdown(f"**Assistant:** {answer}")
 ```
@@ -204,7 +202,7 @@ def main():
 * **st.title** and **st.markdown**: show a title and a small disclaimer.
 * **st.text\_area**: multi-line input for the user’s question.
 * **st.button**: triggers the `healthcare_chatbot(...)` function when clicked.
-* **st.spinner**: shows a “Deepseek is thinking…” message while waiting.
+* **st.spinner**: shows an “AI is thinking…” message while waiting.
 * **st.markdown**: displays the returned `answer` below the text area.
 
 ---
@@ -215,7 +213,7 @@ def main():
 
 * **Python 3.8+** installed on your system
 * A **virtual environment** (optional, but recommended)
-* A free **OpenRouter API key** (Deepseek R1      Qwen3 8B\:free)
+* A free **OpenRouter API key** (`openrouter/free`)
 
   * Sign up at [openrouter.ai](https://openrouter.ai), create an API key (it will start with `or_sk_…`)
 
@@ -259,7 +257,7 @@ def main():
    In the project root, create a file named `.env` with exactly:
 
    ```
-   Deepseek_API_KEY=or_sk_XXXXXXXXXXXXXXXXXXXXXX
+   AI_API_KEY=or_sk_XXXXXXXXXXXXXXXXXXXXXX
    ```
 
    (Replace `or_sk_…` with your actual OpenRouter API key.)
@@ -287,7 +285,7 @@ def main():
 7. **Interact with the Bot**
 
    * Type queries like “What is cough?” or “I have a headache and nausea” into the text area.
-   * Click **Submit** and wait a few seconds for Deepseek to respond.
+   * Click **Submit** and wait a few seconds for the AI model to respond.
 
 ---
 
@@ -330,8 +328,8 @@ streamlit
 
 1. **Change the Model**
 
-   * In `ask_deepseek(…)`, you can swap the model string from
-     `"deepseek/deepseek-r1-0528-qwen3-8b:free"` to any other OpenRouter-hosted model (e.g., `google/gemma-3n-e4b-it:free`), provided you have token quota.
+   * In `ask_ai(…)`, you can swap the model string from
+     `"openrouter/free"` to any other OpenRouter-hosted model (e.g., `google/gemma-3n-e4b-it:free`), provided you have token quota.
 
 2. **Adjust the System Prompt**
 
@@ -349,13 +347,13 @@ streamlit
 * **EHR Integration**: Pull real patient data (with proper authentication) to provide personalized information.
 * **Multilingual Support**: Detect user language and forward to a multilingual LLM for responses in Spanish, Hindi, etc.
 * **Enhanced Symptom Checker**: Build a decision-tree logic or integrate a medical knowledge graph to give more detailed differential diagnoses.
-* **Deployment to Streamlit Community Cloud**: Follow [Streamlit’s deployment guide](https://docs.streamlit.io/) and add `Deepseek_API_KEY` as a secret in the web UI so the app runs in the cloud.
+* **Deployment to Streamlit Community Cloud**: Follow [Streamlit’s deployment guide](https://docs.streamlit.io/) and add `AI_API_KEY` as a secret in the web UI so the app runs in the cloud.
 
 ---
 
 ## 🤝 Acknowledgments
 
-* **OpenRouter** for hosting the free Deepseek R1 Qwen3 8B model
+* **OpenRouter** for hosting free AI models
 * **Streamlit** team for an easy-to-use Python web framework
 * **Python community** for maintaining open-source libraries
 

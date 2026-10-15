@@ -10,24 +10,25 @@ from openai import OpenAI
 # 1. Load environment variables from .env (in project root)
 #
 #    Your .env file should contain:
-#       Deepseek_API_KEY=or_sk_XXXXXXXXXXXXXXXXXXXXXX
+#       AI_API_KEY=or_sk_XXXXXXXXXXXXXXXXXXXXXX
 # ────────────────────────────────────────────────────────────────────────────────
-# No need to load .env at runtime on Streamlit Cloud
-# Instead, read from st.secrets (fallback to os.getenv locally)
 
-if st.runtime.exists():  
-    # When running on Streamlit Cloud, st.secrets will have our key
-    Deepseek_API_KEY = st.secrets["Deepseek_API_KEY"]
-else:
-    # Local development fallback: read from .env
-    load_dotenv()
-    Deepseek_API_KEY = os.getenv("Deepseek_API_KEY")
+# Local development: read from .env via python-dotenv.
+# Streamlit Cloud: fall back to st.secrets if the env var is not set locally.
+load_dotenv()
+AI_API_KEY = os.getenv("AI_API_KEY")
 
-if not Deepseek_API_KEY:
-    raise RuntimeError("Please set Deepseek_API_KEY in .env or in Streamlit Secrets")
+if not AI_API_KEY:
+    try:
+        AI_API_KEY = st.secrets["AI_API_KEY"]
+    except Exception:
+        pass
+
+if not AI_API_KEY:
+    raise RuntimeError("Please set AI_API_KEY in .env or in Streamlit Secrets")
 
 client = OpenAI(
-    api_key=Deepseek_API_KEY,
+    api_key=AI_API_KEY,
     base_url="https://openrouter.ai/api/v1"
 )
 
@@ -47,15 +48,16 @@ Your primary goals:
 """
 
 # ────────────────────────────────────────────────────────────────────────────────
-# 3. Helper function to call Deepseek R1 0528 Qwen3 8B (free) via OpenRouter’s Chat Completions API
+# 3. Helper function to call the AI model via OpenRouter’s Chat Completions API
+#    (defaults to OpenRouter's free router, which auto-selects an available free model)
 # ────────────────────────────────────────────────────────────────────────────────
-def ask_deepseek(
+def ask_ai(
     prompt: str,
-    model: str = "deepseek/deepseek-r1-0528-qwen3-8b:free",
+    model: str = "openrouter/free",
     temperature: float = 0.7
 ) -> str:
     """
-    Send a user question (with SYSTEM_PROMPT) to Deepseek R1 0528 Qwen3 8B (free) via OpenRouter’s Chat API.
+    Send a user question (with SYSTEM_PROMPT) to the AI model via OpenRouter’s Chat API.
     Returns the assistant’s reply.
     """
     try:
@@ -77,12 +79,12 @@ def ask_deepseek(
 def healthcare_chatbot(user_input: str) -> str:
     """
     1) If the user’s input begins with keywords indicating a request for definition/explanation
-       (e.g., “what is”, “explain”, “define”), call Deepseek to provide a medical explanation.
+       (e.g., “what is”, “explain”, “define”), call the AI model to provide a medical explanation.
     2) If the user describes symptoms in first person (e.g., “I have a cough”), provide general
        info about possible causes and urge them to see a professional.
     3) If the user asks about appointments, medications, or prescriptions, give a reminder to contact
        a provider or pharmacist.
-    4) Otherwise, forward to Deepseek for an informative response.
+    4) Otherwise, forward to the AI model for an informative response.
     """
     prompt = user_input.strip()
     if not prompt:
@@ -93,14 +95,14 @@ def healthcare_chatbot(user_input: str) -> str:
     # 1) Definition/explanation requests
     if re.match(r"^\s*(what is|explain|define)\b", lower):
         # e.g., "What is cough?" or "Explain fever."
-        return ask_deepseek(prompt)
+        return ask_ai(prompt)
 
     # 2) Personal symptom descriptions (first-person)
     if re.search(r"\b(i have|i am|i’m|i feel)\b", lower) and re.search(r"\b(symptom|pain|ache|fever|cough|cold|headache|nausea)\b", lower):
         # e.g., "I have a cough", "I feel a sharp pain"
         # Provide general info about symptom, then refer to professional
         symptom = re.search(r"\b(symptom|pain|ache|fever|cough|cold|headache|nausea)\b", lower).group(1)
-        general_info = ask_deepseek(f"What are possible causes and general information about {symptom}?")
+        general_info = ask_ai(f"What are possible causes and general information about {symptom}?")
         return (
             f"{general_info}\n\n"
             "⚠️ Disclaimer: This information is educational only and not a substitute for professional medical advice. "
@@ -114,8 +116,8 @@ def healthcare_chatbot(user_input: str) -> str:
     if re.search(r"\b(medication|prescription|drugs|pills)\b", lower):
         return "💊 For medication or prescription concerns, please consult your doctor or pharmacist."
 
-    # 4) All other queries: forward to Deepseek for an informative response
-    return ask_deepseek(prompt)
+    # 4) All other queries: forward to the AI model for an informative response
+    return ask_ai(prompt)
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 5. Streamlit UI
@@ -136,7 +138,7 @@ def main():
         if not user_input.strip():
             st.warning("⚠️ Please enter a message before submitting.")
         else:
-            with st.spinner("Deepseek is thinking..."):
+            with st.spinner("AI is thinking..."):
                 answer = healthcare_chatbot(user_input)
             st.markdown(f"**Assistant:** {answer}")
 

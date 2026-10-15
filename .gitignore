@@ -8,4 +8,5 @@ __pycache__/
 myenv/
 venv/
 # Ignore real environment files
-.env   # your real env file with secrets
+.env
+# your real env file with secrets
