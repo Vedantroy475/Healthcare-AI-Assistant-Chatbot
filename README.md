@@ -2,7 +2,12 @@
 
 This repository contains a **personal project** demonstrating how to build a simple, yet powerful, AI-powered healthcare assistant using Python, Streamlit, and OpenRouter-hosted large language models. The chatbot can answer basic medical questions, explain common health terms, and provide general advice—all for educational purposes.
 
+## 🌐 Live Demo
+
+Try the deployed app here: **[Healthcare Assistant Chatbot on Streamlit Community Cloud](https://healthcare-ai-assistant-chatbot-jchiu3ci7h9dn2lfpbhvfe.streamlit.app/)**
+
 ---
+
 
 ## 🎯 Project Overview
 

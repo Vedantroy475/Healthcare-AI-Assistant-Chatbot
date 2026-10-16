@@ -120,27 +120,223 @@ def healthcare_chatbot(user_input: str) -> str:
     return ask_ai(prompt)
 
 # ────────────────────────────────────────────────────────────────────────────────
-# 5. Streamlit UI
+# 5. Streamlit UI — Blue/Teal Medical Theme
 # ────────────────────────────────────────────────────────────────────────────────
+
+CUSTOM_CSS = """<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+    --primary-teal: #007A7A;
+    --primary-teal-dark: #005f5f;
+    --teal-bg: #e6f4f4;
+    --teal-border: #b8d8d8;
+    --user-msg-bg: #e3f2fd;
+    --user-msg-border: #90caf9;
+    --assistant-msg-bg: #f1f8ff;
+    --assistant-msg-border: #cce5ff;
+    --sidebar-bg: #f8fafc;
+    --text-main: #1f2937;
+    --text-muted: #6b7280;
+}
+
+html, body, [class*="st"] {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+
+.main .block-container {
+    padding-top: 1.5rem;
+    padding-bottom: 2rem;
+    max-width: 800px;
+}
+
+.app-header {
+    text-align: center;
+    padding: 1rem 0 0.5rem 0;
+}
+.app-title {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: var(--primary-teal-dark);
+    margin: 0;
+    letter-spacing: -0.5px;
+}
+.app-subtitle {
+    font-size: 1rem;
+    color: var(--text-muted);
+    margin: 0.25rem 0 0 0;
+    font-weight: 500;
+}
+
+disclaimer-banner {
+    background: var(--teal-bg);
+    border: 1px solid var(--teal-border);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin: 0.5rem 0 1.5rem 0;
+    font-size: 0.875rem;
+    color: var(--text-main);
+    text-align: center;
+}
+disclaimer-banner b {
+    color: var(--primary-teal-dark);
+}
+
+.welcome-msg {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 2rem 1rem;
+    font-size: 1rem;
+}
+
+.stChatInputContainer {
+    padding-top: 0.5rem;
+}
+
+section[data-testid="stSidebar"] {
+    background-color: var(--sidebar-bg);
+}
+.sidebar-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--primary-teal-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.75rem;
+}
+
+.stButton > button[kind="secondary"] {
+    background: #ffffff !important;
+    border: 1px solid var(--teal-border) !important;
+    color: var(--text-main) !important;
+    border-radius: 6px !important;
+    padding: 0.4rem 0.75rem !important;
+    font-size: 0.85rem !important;
+    width: 100% !important;
+    text-align: left !important;
+    margin-bottom: 0.5rem !important;
+}
+.stButton > button[kind="secondary"]:hover {
+    background: var(--teal-bg) !important;
+    border-color: var(--primary-teal) !important;
+    color: var(--primary-teal-dark) !important;
+}
+
+.stButton > button[kind="primary"] {
+    background: var(--primary-teal) !important;
+    border: none !important;
+    color: #ffffff !important;
+    border-radius: 6px !important;
+    font-weight: 600 !important;
+    padding: 0.5rem 1rem !important;
+    width: 100% !important;
+}
+.stButton > button[kind="primary"]:hover {
+    background: var(--primary-teal-dark) !important;
+}
+
+.stSpinner > div {
+    border-color: var(--primary-teal) transparent transparent transparent !important;
+}
+</style>"""
+
+
+def apply_custom_css():
+    st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
+
+
+def render_sidebar():
+    with st.sidebar:
+        st.markdown("<div class='sidebar-title'>💡 Try asking</div>", unsafe_allow_html=True)
+        sample_queries = [
+            "What is hypertension?",
+            "Explain diabetes.",
+            "I have a fever and cough.",
+            "How do I book an appointment?",
+            "What medication for a cold?",
+        ]
+        for query in sample_queries:
+            if st.button(query, key=f"sample_{hash(query)}", use_container_width=True):
+                st.session_state.pending_query = query
+        st.markdown("---")
+        if st.button("🗑️ Clear Chat", key="clear_chat", type="primary", use_container_width=True):
+            st.session_state.messages = []
+            st.session_state.pending_query = None
+            st.rerun()
+        st.markdown("---")
+        st.markdown("<div class='sidebar-title'>ℹ️ About</div>", unsafe_allow_html=True)
+        st.caption(
+            "🤖 Built with Streamlit + OpenRouter. "
+            "👨‍⚕️ A personal project by Vedant Roy."
+        )
+
+
+def render_chat_history():
+    if "messages" not in st.session_state or not st.session_state.messages:
+        st.markdown(
+            "<div class='welcome-msg'>"
+            "👋 👨‍⚕️ Hello! I'm your healthcare assistant. "
+            "Ask me about medical terms, symptoms, or general health questions."
+            "</div>",
+            unsafe_allow_html=True,
+        )
+        return
+    for msg in st.session_state.messages:
+        if msg["role"] == "user":
+            with st.chat_message("user", avatar="👤"):
+                st.markdown(msg["content"])
+        else:
+            with st.chat_message("assistant", avatar="🤖"):
+                st.markdown(msg["content"])
+
+
 def main():
-    st.set_page_config(page_title="Healthcare Assistant Chatbot", layout="centered")
-    st.title("Healthcare Assistant Chatbot by Vedant Roy")
+    st.set_page_config(
+        page_title="Healthcare Assistant Chatbot",
+        page_icon="👨‍⚕️",
+        layout="centered",
+        initial_sidebar_state="expanded",
+    )
+    apply_custom_css()
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+    if "pending_query" not in st.session_state:
+        st.session_state.pending_query = None
     st.markdown(
-        "<small><b>Disclaimer:</b> This chatbot is for demonstration purposes only. "
-        "Any medical information provided is not a substitute for professional advice. "
-        "Always consult a healthcare professional for personalized guidance.</small>",
+        "<div class='app-header'>"
+        "<h1 class='app-title'>👨‍⚕️ Healthcare Assistant Chatbot</h1>"
+        "<p class='app-subtitle'>by Vedant Roy</p>"
+        "</div>",
         unsafe_allow_html=True,
     )
-
-    user_input = st.text_area("How can I assist you today?", height=150)
-
-    if st.button("Submit"):
-        if not user_input.strip():
-            st.warning("⚠️ Please enter a message before submitting.")
-        else:
-            with st.spinner("AI is thinking..."):
-                answer = healthcare_chatbot(user_input)
-            st.markdown(f"**Assistant:** {answer}")
+    st.markdown(
+        "<div class='disclaimer-banner'>"
+        "<b>⚠️ Disclaimer:</b> This chatbot is for demonstration purposes only. "
+        "Any medical information provided is not a substitute for professional advice. "
+        "Always consult a healthcare professional for personalized guidance."
+        "</div>",
+        unsafe_allow_html=True,
+    )
+    render_sidebar()
+    render_chat_history()
+    prompt = None
+    if st.session_state.pending_query:
+        prompt = st.session_state.pending_query
+        st.session_state.pending_query = None
+    user_input = st.chat_input("Type your health question here…")
+    final_input = prompt if prompt else user_input
+    if final_input:
+        st.session_state.messages.append({"role": "user", "content": final_input})
+        with st.chat_message("user", avatar="👤"):
+            st.markdown(final_input)
+        with st.chat_message("assistant", avatar="🤖"):
+            with st.spinner("AI is thinking…"):
+                answer = healthcare_chatbot(final_input)
+        st.session_state.messages.append({"role": "assistant", "content": answer})
+        st.rerun()
 
 if __name__ == "__main__":
     main()
